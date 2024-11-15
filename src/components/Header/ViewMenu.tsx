@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { Visibility } from "@mui/icons-material";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useEffect, useState } from "react";
@@ -106,96 +107,107 @@ export default function ViewMenu({
           </Typography>
         ) : (
           <SimpleTreeView
-            defaultExpandIcon={<ChevronRightIcon />}
-            defaultCollapseIcon={<ExpandMoreIcon />}
-            items={{
-              id: "root",
-              children: [
-                {
-                  id: "blocks",
-                  children:
-                    blocks.size === 0
-                      ? [
-                          {
-                            id: "blocks-empty",
-                            label: "No blocks found",
-                          },
-                        ]
-                      : Array.from(blocks.entries()).map(
-                          ([blockId, count]) => ({
-                            id: `block-${blockId}`,
-                            label: (
-                              <MenuItem onClick={(e) => e.stopPropagation()}>
-                                <ListItemIcon>
-                                  <Checkbox
-                                    edge="start"
-                                    checked={
-                                      visibilitySettings.blocks[blockId] !==
-                                      false
-                                    }
-                                    onChange={(e) => {
-                                      e.stopPropagation();
-                                      onVisibilityChange(
-                                        "blocks",
-                                        blockId,
-                                        e.target.checked
-                                      );
-                                    }}
-                                  />
-                                </ListItemIcon>
-                                <Typography variant="body2">
-                                  {blockId} ({count})
-                                </Typography>
-                              </MenuItem>
-                            ),
-                          })
-                        ),
-                  label: "Blocks",
-                },
-                {
-                  id: "entities",
-                  children:
-                    entities.size === 0
-                      ? [
-                          {
-                            id: "entities-empty",
-                            label: "No entities found",
-                          },
-                        ]
-                      : Array.from(entities.entries()).map(
-                          ([entityId, count]) => ({
-                            id: `entity-${entityId}`,
-                            label: (
-                              <MenuItem onClick={(e) => e.stopPropagation()}>
-                                <ListItemIcon>
-                                  <Checkbox
-                                    edge="start"
-                                    checked={
-                                      visibilitySettings.entities[entityId] !==
-                                      false
-                                    }
-                                    onChange={(e) => {
-                                      e.stopPropagation();
-                                      onVisibilityChange(
-                                        "entities",
-                                        entityId,
-                                        e.target.checked
-                                      );
-                                    }}
-                                  />
-                                </ListItemIcon>
-                                <Typography variant="body2">
-                                  {entityId} ({count})
-                                </Typography>
-                              </MenuItem>
-                            ),
-                          })
-                        ),
-                  label: "Entities",
-                },
-              ],
-            }}
-          />
+            aria-label="structure elements"
+            expandIcon={<ChevronRightIcon />}
+            collapseIcon={<ExpandMoreIcon />}
+          >
+            <TreeItem nodeId="blocks-root" label="Blocks">
+              {blocks.size === 0 ? (
+                <TreeItem
+                  nodeId="blocks-empty"
+                  itemId="blocks-empty"
+                  label="No blocks found"
+                />
+              ) : (
+                Array.from(blocks.entries()).map(([blockId, count]) => {
+                  const itemId = `block-${blockId}`;
+                  return (
+                    <TreeItem
+                      key={itemId}
+                      nodeId={itemId}
+                      itemId={itemId}
+                      label={
+                        <MenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Checkbox
+                              edge="start"
+                              checked={
+                                visibilitySettings.blocks[blockId] !== false
+                              }
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                onVisibilityChange(
+                                  "blocks",
+                                  blockId,
+                                  e.target.checked
+                                );
+                              }}
+                            />
+                          </ListItemIcon>
+                          <Typography variant="body2">
+                            {blockId} ({count})
+                          </Typography>
+                        </MenuItem>
+                      }
+                    />
+                  );
+                })
+              )}
+            </TreeItem>
+            <TreeItem nodeId="entities-root" label="Entities">
+              {entities.size === 0 ? (
+                <TreeItem
+                  nodeId="entities-empty"
+                  itemId="entities-empty"
+                  label="No entities found"
+                />
+              ) : (
+                Array.from(entities.entries()).map(([entityId, count]) => {
+                  const itemId = `entity-${entityId}`;
+                  return (
+                    <TreeItem
+                      key={itemId}
+                      nodeId={itemId}
+                      itemId={itemId}
+                      label={
+                        <MenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Checkbox
+                              edge="start"
+                              checked={
+                                visibilitySettings.entities[entityId] !== false
+                              }
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                onVisibilityChange(
+                                  "entities",
+                                  entityId,
+                                  e.target.checked
+                                );
+                              }}
+                            />
+                          </ListItemIcon>
+                          <Typography variant="body2">
+                            {entityId} ({count})
+                          </Typography>
+                        </MenuItem>
+                      }
+                    />
+                  );
+                })
+              )}
+            </TreeItem>
+          </SimpleTreeView>
         )}
       </Menu>
     </>
