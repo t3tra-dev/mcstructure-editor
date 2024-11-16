@@ -217,6 +217,7 @@ export class SceneManager {
 
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      mesh.layers.enable(0);
 
       this.blocks.set(mesh.userData.id, mesh);
       this.scene.add(mesh);
@@ -249,6 +250,7 @@ export class SceneManager {
           );
           mesh.userData.id = `entity_${index}`;
           mesh.userData.definition = entity;
+          mesh.layers.enable(0);
     
           this.entities.set(mesh.userData.id, mesh);
           this.scene.add(mesh);
@@ -332,19 +334,42 @@ export class SceneManager {
     entities: { [key: string]: boolean }
   }) {
     // ブロックの可視性を更新
-    this.blocks.forEach((mesh, id) => {
-      const blockName = mesh.userData.definition.name.value;
-      mesh.visible = settings.blocks[blockName] !== false;
-      // クリック判定の無効化
-      mesh.layers.enable(settings.blocks[blockName] !== false ? 0 : 1);
+    this.blocks.forEach((mesh) => {
+      if (mesh.userData?.definition?.name?.value) {
+        const blockName = mesh.userData.definition.name.value;
+        const isVisible = settings.blocks[blockName] !== false;
+        mesh.visible = isVisible;
+        
+        // レイキャストの対象も更新
+        if (isVisible) {
+          mesh.layers.enable(0);
+          mesh.layers.disable(1);
+        } else {
+          mesh.layers.disable(0);
+          mesh.layers.enable(1);
+        }
+      }
     });
   
     // エンティティの可視性を更新
-    this.entities.forEach((mesh, id) => {
-      const entityName = mesh.userData.definition.identifier.value;
-      mesh.visible = settings.entities[entityName] !== false;
-      // クリック判定の無効化
-      mesh.layers.enable(settings.entities[entityName] !== false ? 0 : 1);
+    this.entities.forEach((mesh) => {
+      if (mesh.userData?.definition?.identifier?.value) {
+        const entityName = mesh.userData.definition.identifier.value;
+        const isVisible = settings.entities[entityName] !== false;
+        mesh.visible = isVisible;
+        
+        // レイキャストの対象も更新
+        if (isVisible) {
+          mesh.layers.enable(0);
+          mesh.layers.disable(1);
+        } else {
+          mesh.layers.disable(0);
+          mesh.layers.enable(1);
+        }
+      }
     });
+  
+    // シーンを強制的に更新
+    this.renderer.render(this.scene, this.camera);
   }
 }
