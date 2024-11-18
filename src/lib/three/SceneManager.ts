@@ -134,11 +134,16 @@ export class SceneManager {
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   }
 
+  // レイキャストの処理も改善
   private handleClick(event: MouseEvent) {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
+    // 可視オブジェクトのみを対象に
+    const visibleBlocks = Array.from(this.blocks.values()).filter(block => block.visible);
+    const visibleEntities = Array.from(this.entities.values()).filter(entity => entity.visible);
+
     // ブロックとの交差判定
-    const blockIntersects = this.raycaster.intersectObjects([...this.blocks.values()]);
+    const blockIntersects = this.raycaster.intersectObjects(visibleBlocks);
     if (blockIntersects.length > 0) {
       const selectedBlock = blockIntersects[0].object;
       this.highlightSelected(selectedBlock);
@@ -147,7 +152,7 @@ export class SceneManager {
     }
 
     // エンティティとの交差判定
-    const entityIntersects = this.raycaster.intersectObjects([...this.entities.values()]);
+    const entityIntersects = this.raycaster.intersectObjects(visibleEntities);
     if (entityIntersects.length > 0) {
       const selectedEntity = entityIntersects[0].object;
       this.highlightSelected(selectedEntity);
@@ -338,38 +343,41 @@ export class SceneManager {
       if (mesh.userData?.definition?.name?.value) {
         const blockName = mesh.userData.definition.name.value;
         const isVisible = settings.blocks[blockName] !== false;
-        mesh.visible = isVisible;
         
-        // レイキャストの対象も更新
-        if (isVisible) {
-          mesh.layers.enable(0);
-          mesh.layers.disable(1);
-        } else {
-          mesh.layers.disable(0);
-          mesh.layers.enable(1);
+        // メッシュとマテリアルの更新
+        mesh.visible = isVisible;
+        mesh.raycast = isVisible ? THREE.Mesh.prototype.raycast : () => false;
+        
+        const material = mesh.material as THREE.MeshPhongMaterial;
+        if (material) {
+          material.visible = isVisible;
+          material.opacity = isVisible ? 0.5 : 0;
+          material.needsUpdate = true;
         }
       }
     });
-  
+
     // エンティティの可視性を更新
     this.entities.forEach((mesh) => {
       if (mesh.userData?.definition?.identifier?.value) {
         const entityName = mesh.userData.definition.identifier.value;
         const isVisible = settings.entities[entityName] !== false;
-        mesh.visible = isVisible;
         
-        // レイキャストの対象も更新
-        if (isVisible) {
-          mesh.layers.enable(0);
-          mesh.layers.disable(1);
-        } else {
-          mesh.layers.disable(0);
-          mesh.layers.enable(1);
+        // メッシュとマテリアルの更新
+        mesh.visible = isVisible;
+        mesh.raycast = isVisible ? THREE.Mesh.prototype.raycast : () => false;
+        
+        const material = mesh.material as THREE.MeshPhongMaterial;
+        if (material) {
+          material.visible = isVisible;
+          material.opacity = isVisible ? 0.5 : 0;
+          material.needsUpdate = true;
         }
       }
     });
-  
-    // シーンを強制的に更新
+
+    // レンダリングを強制更新
+    this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
 }

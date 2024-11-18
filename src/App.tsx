@@ -21,10 +21,13 @@ export default function App() {
     severity: "success" | "error";
   }>({ open: false, message: "", severity: "success" });
 
-  const [visibilitySettings, setVisibilitySettings] = useState({
-    blocks: {} as { [key: string]: boolean },
-    entities: {} as { [key: string]: boolean },
-  });
+  const [visibilitySettings, setVisibilitySettings] = useState<{
+    blocks: { [key: string]: boolean },
+    entities: { [key: string]: boolean }
+  }>(() => ({
+    blocks: {},
+    entities: {}
+  }));
 
   const sceneManagerRef = useRef<SceneManager | null>(null);
 
@@ -33,23 +36,54 @@ export default function App() {
     id: string,
     visible: boolean
   ) => {
-    setVisibilitySettings((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [id]: visible,
-      },
-    }));
+    setVisibilitySettings(prev => {
+      const newSettings = {
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [id]: visible
+        }
+      };
+      
+      // SceneManagerの更新を即時実行
+      if (sceneManagerRef.current) {
+        sceneManagerRef.current.updateVisibility(newSettings);
+      }
+      
+      return newSettings;
+    });
   };
 
   // 構造体のロード処理
   const handleStructureLoad = (newStructure: MCStructure) => {
-    setStructure(newStructure);
-    setNotification({
-      open: true,
-      message: "Structure loaded successfully",
-      severity: "success",
+    // 既存のブロックとエンティティを収集
+    const blocks = new Set<string>();
+    const entities = new Set<string>();
+  
+    // ブロックの収集
+    const blockPalette = newStructure.structure.value.palette.value.default.value.block_palette.value.value;
+    blockPalette.forEach(block => {
+      if (block.name?.value) {
+        blocks.add(block.name.value);
+      }
     });
+  
+    // エンティティの収集
+    if (newStructure.structure.value.entities?.value?.value) {
+      newStructure.structure.value.entities.value.value.forEach(entity => {
+        if (entity.identifier?.value) {
+          entities.add(entity.identifier.value);
+        }
+      });
+    }
+  
+    // 初期表示設定を設定（全て表示）
+    setVisibilitySettings({
+      blocks: Array.from(blocks).reduce((acc, name) => ({ ...acc, [name]: true }), {}),
+      entities: Array.from(entities).reduce((acc, name) => ({ ...acc, [name]: true }), {})
+    });
+  
+    setStructure(newStructure);
   };
 
   // 構造体の更新処理

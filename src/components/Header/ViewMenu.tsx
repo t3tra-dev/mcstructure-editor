@@ -6,8 +6,8 @@ import {
   Box,
 } from "@mui/material";
 import { Visibility } from "@mui/icons-material";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useEffect, useState } from "react";
@@ -64,14 +64,14 @@ export default function ViewMenu({
       const blockPalette =
         structure.structure.value.palette.value.default.value.block_palette
           .value.value;
-      structure.structure.value.block_indices.value.value[0].value.forEach(
-        (index: number) => {
-          if (index !== -1) {
-            const blockName = blockPalette[index].name.value;
-            blocks.set(blockName, (blocks.get(blockName) || 0) + 1);
-          }
+      const blockIndices = structure.structure.value.block_indices.value.value[0].value;
+
+      blockIndices.forEach((index: number) => {
+        if (index !== -1) {
+          const blockName = blockPalette[index].name.value;
+          blocks.set(blockName, (blocks.get(blockName) || 0) + 1);
         }
-      );
+      });
 
       if (structure.structure.value.entities?.value?.value) {
         structure.structure.value.entities.value.value.forEach(
@@ -86,40 +86,44 @@ export default function ViewMenu({
     return { blocks, entities };
   };
 
-  // ツリーアイテムのレンダリング関数
   const renderTreeItem = (
-    id: string, 
-    label: string, 
-    count: number, 
-    type: 'blocks' | 'entities',
-    settings: typeof visibilitySettings
+    id: string,
+    count: number,
+    type: 'blocks' | 'entities'
   ) => {
     const sanitizedId = id.replace(/[^\w-]/g, '_');
-    const uniqueId = `${type.slice(0, -1)}-${sanitizedId}`;
+    const uniqueId = `${type}-${sanitizedId}`;
+    const isVisible = visibilitySettings[type][id] !== false;
 
     return (
       <TreeItem
         key={uniqueId}
         nodeId={uniqueId}
         itemId={uniqueId}
+        expandIcon={<ChevronRightIcon />}
+        collapseIcon={<ExpandMoreIcon />}
         label={
           <Box
-            onClick={(e) => e.stopPropagation()}
-            sx={{ 
-              display: 'flex', 
+            sx={{
+              display: 'flex',
               alignItems: 'center',
-              userSelect: 'none'
+              p: 0.5,
+              pr: 0,
             }}
           >
             <Checkbox
-              checked={settings[type][id] !== false}
+              checked={isVisible}
+              size="small"
+              onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
                 e.stopPropagation();
                 onVisibilityChange(type, id, e.target.checked);
               }}
-              onClick={e => e.stopPropagation()}
             />
-            <Typography variant="body2">
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 'inherit', flexGrow: 1 }}
+            >
               {id} ({count})
             </Typography>
           </Box>
@@ -132,18 +136,22 @@ export default function ViewMenu({
 
   return (
     <>
-      <Button color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} startIcon={<Visibility />}>
+      <Button
+        color="inherit"
+        onClick={handleClick}
+        startIcon={<Visibility />}
+      >
         View
       </Button>
       <Menu
         anchorEl={anchorEl}
         open={open}
-        onClose={() => setAnchorEl(null)}
+        onClose={handleClose}
         PaperProps={{
-          style: {
+          sx: {
             maxHeight: '70vh',
             width: '300px',
-            padding: '8px',
+            p: 1,
           },
         }}
       >
@@ -152,18 +160,19 @@ export default function ViewMenu({
             No structure loaded
           </Typography>
         ) : (
-          <Box sx={{ maxWidth: '100%', maxHeight: '60vh', overflow: 'auto' }}>
+          <Box sx={{ minWidth: 200 }}>
             <SimpleTreeView
-              aria-label="structure elements"
-              defaultCollapseIcon={<ExpandMoreIcon />}
-              defaultExpandIcon={<ChevronRightIcon />}
-              defaultExpanded={['blocks-root', 'entities-root']}
+              aria-label="structure visibility control"
+              defaultExpandedItems={['blocks-root', 'entities-root']}
+              sx={{ flexGrow: 1, maxWidth: 400, overflowY: 'auto' }}
             >
-              <TreeItem 
+              <TreeItem
                 nodeId="blocks-root"
                 itemId="blocks-root"
+                expandIcon={<ChevronRightIcon />}
+                collapseIcon={<ExpandMoreIcon />}
                 label={
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
                     Blocks
                   </Typography>
                 }
@@ -172,11 +181,13 @@ export default function ViewMenu({
                   <TreeItem
                     nodeId="blocks-empty"
                     itemId="blocks-empty"
+                    expandIcon={<ChevronRightIcon />}
+                    collapseIcon={<ExpandMoreIcon />}
                     label="No blocks found"
                   />
                 ) : (
                   Array.from(blocks.entries()).map(([id, count]) =>
-                    renderTreeItem(id, id, count, 'blocks', visibilitySettings)
+                    renderTreeItem(id, count, 'blocks')
                   )
                 )}
               </TreeItem>
@@ -184,8 +195,10 @@ export default function ViewMenu({
               <TreeItem
                 nodeId="entities-root"
                 itemId="entities-root"
+                expandIcon={<ChevronRightIcon />}
+                collapseIcon={<ExpandMoreIcon />}
                 label={
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="subtitle2" fontWeight="bold">
                     Entities
                   </Typography>
                 }
@@ -194,11 +207,13 @@ export default function ViewMenu({
                   <TreeItem
                     nodeId="entities-empty"
                     itemId="entities-empty"
+                    expandIcon={<ChevronRightIcon />}
+                    collapseIcon={<ExpandMoreIcon />}
                     label="No entities found"
                   />
                 ) : (
                   Array.from(entities.entries()).map(([id, count]) =>
-                    renderTreeItem(id, id, count, 'entities', visibilitySettings)
+                    renderTreeItem(id, count, 'entities')
                   )
                 )}
               </TreeItem>
